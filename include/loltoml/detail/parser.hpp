@@ -654,7 +654,7 @@ private:
                                 digits[next_index++] = parse_datetime_digit();
                             }
 
-                            handler.datetime(digits, digits + next_index);
+                            handler.datetime(std::string(digits, digits + next_index));
                             return toml_type_t::datetime;
                         }
                     }

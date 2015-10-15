@@ -60,8 +60,8 @@ struct handler_t {
         std::cout << "String: " << s << std::endl;
     }
 
-    void datetime(const char *begin, const char *end) {
-        std::cout << "Datetime: " << std::string(begin, end) << std::endl;
+    void datetime(const std::string &value) {
+        std::cout << "Datetime: " << value << std::endl;
     }
 
     void integer(int64_t value) {
