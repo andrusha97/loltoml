@@ -13,7 +13,7 @@ class parser_error_t :
     public std::exception
 {
 public:
-    parser_error_t(std::string message, size_t position) :
+    parser_error_t(std::string message, std::size_t position) :
         m_message(std::move(message)),
         m_position(position)
     { }
@@ -26,20 +26,20 @@ public:
         return m_message.c_str();
     }
 
-    size_t position() const {
+    std::size_t position() const {
         return m_position;
     }
 
 private:
     std::string m_message;
-    size_t m_position;
+    std::size_t m_position;
 };
 
 class stream_error_t :
     public parser_error_t
 {
 public:
-    stream_error_t(size_t processed) :
+    stream_error_t(std::size_t processed) :
         parser_error_t("Unable to read data from the stream", processed)
     { }
 

@@ -40,7 +40,7 @@ struct handler_t {
         std::cout << "Start array [" << std::endl;
     }
 
-    void finish_array(size_t array_size) {
+    void finish_array(std::size_t array_size) {
         std::cout << "] Finish array " << array_size << std::endl;
     }
 
@@ -48,7 +48,7 @@ struct handler_t {
         std::cout << "Start inline table {" << std::endl;
     }
 
-    void finish_inline_table(size_t table_size) {
+    void finish_inline_table(std::size_t table_size) {
         std::cout << "} Finish inline table " << table_size << std::endl;
     }
 
@@ -64,7 +64,7 @@ struct handler_t {
         std::cout << "Datetime: " << value << std::endl;
     }
 
-    void integer(int64_t value) {
+    void integer(std::int64_t value) {
         std::cout << "Integer: " << value << std::endl;
     }
 

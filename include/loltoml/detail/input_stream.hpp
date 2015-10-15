@@ -49,13 +49,13 @@ public:
         return m_backend.eof();
     }
 
-    size_t processed() const {
+    std::size_t processed() const {
         return m_processed;
     }
 
 private:
     std::istream &m_backend;
-    size_t m_processed;
+    std::size_t m_processed;
     bool m_emit_eol;
 };
 

@@ -91,12 +91,12 @@ private:
         table
     };
 
-    template<size_t N>
+    template<std::size_t N>
     char parse_chars(const char (&expected)[N]) {
         static_assert(N > 0, "No expected characters specified");
 
         char result = input.get();
-        for (size_t i = 0; i + 1 < N; ++i) {
+        for (std::size_t i = 0; i + 1 < N; ++i) {
             if (result == expected[i]) {
                 return result;
             }
@@ -104,7 +104,7 @@ private:
 
         std::string list = "\'" + escape_char(expected[0]) + "\'";
 
-        for (size_t i = 1; i + 1 < N; ++i) {
+        for (std::size_t i = 1; i + 1 < N; ++i) {
             list += ", \'" + escape_char(expected[0]) + "\'";
         }
 
@@ -261,7 +261,7 @@ private:
         skip_spaces_and_empty_lines();
 
         toml_type_t array_type;
-        size_t size = 0;
+        std::size_t size = 0;
 
         while (true) {
             if (input.peek() == ']') {
@@ -297,7 +297,7 @@ private:
         assert(input.peek() == '{');
         input.get();
         handler.start_inline_table();
-        size_t size = 0;
+        std::size_t size = 0;
 
         skip_spaces();
 
@@ -599,13 +599,13 @@ private:
         const char *max_int64_string = "9223372036854775807";
         const char *min_int64_string = "9223372036854775808";
 
-        constexpr size_t max_double_length = 800;
+        constexpr std::size_t max_double_length = 800;
 
         char buffer[max_double_length + 1];
         buffer[0] = '+';
         char *digits = buffer + 1;
 
-        size_t next_index = 0;
+        std::size_t next_index = 0;
 
         if (std::isdigit(input.peek())) {
             digits[next_index++] = input.get();
@@ -712,7 +712,7 @@ private:
                                      input.processed() - next_index);
             }
 
-            int64_t result = 0;
+            std::int64_t result = 0;
 
             if (buffer[0] == '-') {
                 for (auto it = digits; it < digits + next_index; ++it) {
