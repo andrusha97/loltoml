@@ -8,3 +8,4 @@ INCLUDE_DIRECTORIES(BEFORE
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -W -Wall -Werror -Wextra -pedantic")
 
 ADD_EXECUTABLE(simple simple.cpp)
+ADD_EXECUTABLE(roundtrip roundtrip.cpp)
