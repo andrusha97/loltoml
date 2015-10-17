@@ -1,15 +1,16 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(LOLTOML)
 
-INCLUDE_DIRECTORIES(BEFORE
-    ${PROJECT_SOURCE_DIR}/include
-)
+OPTION(ENABLE_TESTING "Enable testing" ON)
 
-ADD_EXECUTABLE(mytest
-    main.cpp
-)
+IF (ENABLE_TESTING)
+    ENABLE_TESTING()
+    ADD_SUBDIRECTORY(tests)
+ENDIF()
 
-SET_TARGET_PROPERTIES(mytest PROPERTIES
-    VERSION 1
-    COMPILE_FLAGS "-std=c++0x -W -Wall -Werror -pedantic"
+INSTALL(
+    DIRECTORY
+        include/
+    DESTINATION include
+    COMPONENT development
 )
