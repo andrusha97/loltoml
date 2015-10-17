@@ -125,8 +125,9 @@ private:
         assert(input.peek() == '#');
         input.get();
 
+        std::string comment;
         while (input.peek() == '\t' || !iscontrol(input.peek())) {
-            input.get();
+            comment.push_back(input.get());
         }
     }
 
@@ -449,12 +450,10 @@ private:
 
         while (true) {
             char ch = input.get();
-            if (static_cast<unsigned char>(ch) < 32) {
+            if (iscontrol(ch)) {
                 throw parser_error_t("Control characters must be escaped", last_char_offset());
             } else if (ch == '"') {
                 break;
-            } else if (ch == '\n') {
-                throw parser_error_t("Basic strings must be one-line", last_char_offset());
             } else if (ch == '\\') {
                 std::size_t escape_sequence_offset = last_char_offset();
                 char ch = input.get();
@@ -491,13 +490,19 @@ private:
         std::string result;
 
         // Ignore first new-line after open quotes.
-        if (input.peek() == '\n') {
-            input.get();
+        if (input.peek() == '\r' || input.peek() == '\n') {
+            parse_new_line();
         }
 
         while (true) {
+            if (input.peek() == '\r' || input.peek() == '\n') {
+                parse_new_line();
+                result.push_back('\n');
+                continue;
+            }
+
             char ch = input.get();
-            if (static_cast<unsigned char>(ch) < 32 && ch != '\n' && ch != '\r') {
+            if (iscontrol(ch)) {
                 throw parser_error_t("Control characters must be escaped", last_char_offset());
             } else if (ch == '"') {
                 if (input.peek() == '"') {
@@ -510,13 +515,17 @@ private:
                 }
                 result.push_back('"');
             } else if (ch == '\\') {
-                std::size_t escape_sequence_offset = last_char_offset();
-                char ch = input.get();
-                if (ch == '\n') {
+                if (input.peek() == '\r' || input.peek() == '\n') {
+                    parse_new_line();
                     while (std::isspace(input.peek())) {
                         input.get();
                     }
-                } else if (ch == 'b') {
+                    continue;
+                }
+
+                std::size_t escape_sequence_offset = last_char_offset();
+                char ch = input.get();
+                if (ch == 'b') {
                     result.push_back('\b');
                 } else if (ch == 't') {
                     result.push_back('\t');
@@ -574,12 +583,18 @@ private:
                 input.get();
 
                 // Ignore first new-line after open quotes.
-                if (input.peek() == '\n') {
-                    input.get();
+                if (input.peek() == '\r' || input.peek() == '\n') {
+                    parse_new_line();
                 }
 
                 std::string string;
                 while (true) {
+                    if (input.peek() == '\r' || input.peek() == '\n') {
+                        parse_new_line();
+                        string.push_back('\n');
+                        continue;
+                    }
+
                     char ch = input.get();
                     if (ch == '\'') {
                         if (input.peek() == '\'') {
@@ -592,7 +607,7 @@ private:
                             string.push_back('\'');
                         }
                         string.push_back('\'');
-                    } else if (ch < 32 && ch != '\t' && ch != '\n') {
+                    } else if (iscontrol(ch) && ch != '\t') {
                         throw parser_error_t("Control characters are not allowed", last_char_offset());
                     } else {
                         string.push_back(ch);
@@ -606,10 +621,8 @@ private:
 
             while (true) {
                 char ch = input.get();
-                if (ch < 32 && ch != '\t') {
+                if (iscontrol(ch) && ch != '\t') {
                     throw parser_error_t("Control characters are not allowed", last_char_offset());
-                } else if (ch == '\n') {
-                    throw parser_error_t("Literal strings must be one-line", last_char_offset());
                 } else if (ch == '\'') {
                     break;
                 }
