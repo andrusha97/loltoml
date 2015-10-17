@@ -46,6 +46,11 @@ std::string escape_char(char ch) {
 }
 
 
+bool iscontrol(char ch) {
+    return static_cast<unsigned char>(ch) < 32;
+}
+
+
 typedef std::vector<std::string>::const_iterator key_iterator_t;
 
 
@@ -61,19 +66,13 @@ public:
     { }
 
     void parse() {
-        skip_spaces_and_empty_lines();
-
         handler.start_document();
 
+        parse_expression();
+
         while (!input.eof()) {
-            if (input.peek() == '[') {
-                parse_table_header();
-            } else {
-                parse_kv_pair();
-            }
-            skip_spaces();
-            parse_line_end();
-            skip_spaces_and_empty_lines();
+            parse_new_line();
+            parse_expression();
         }
 
         handler.finish_document();
@@ -122,36 +121,64 @@ private:
         }
     }
 
+    void parse_comment() {
+        assert(input.peek() == '#');
+        input.get();
+
+        while (input.peek() == '\t' || !iscontrol(input.peek())) {
+            input.get();
+        }
+    }
+
+    void parse_new_line() {
+        char ch = input.get();
+
+        if (ch == '\r') {
+            ch = input.get();
+        }
+
+        if (ch != '\n') {
+            throw parser_error_t("Expected new-line", last_char_offset());
+        }
+    }
+
     void skip_spaces_and_empty_lines() {
         while (!input.eof()) {
             skip_spaces();
 
             if (input.peek() == '#') {
-                input.get();
-
-                while (input.peek() != '\n') {
-                    input.get();
-                }
-            }
-
-            if (input.peek() == '\n') {
-                input.get();
+                parse_comment();
+                parse_new_line();
+            } else if (input.peek() == '\r' || input.peek() == '\n') {
+                parse_new_line();
             } else {
                 break;
             }
         }
     }
 
-    void parse_line_end() {
-        if (input.peek() == '#') {
-            input.get();
+    void parse_expression() {
+        skip_spaces();
 
-            while (input.peek() != '\n') {
-                input.get();
+        if (input.eof()) {
+            return;
+        } else if (input.peek() == '\r' || input.peek() == '\n') {
+            return;
+        } else if (input.peek() == '#') {
+            parse_comment();
+        } else if (input.peek() == '[') {
+            parse_table_header();
+            skip_spaces();
+            if (!input.eof() && input.peek() == '#') {
+                parse_comment();
+            }
+        } else {
+            parse_kv_pair();
+            skip_spaces();
+            if (!input.eof() && input.peek() == '#') {
+                parse_comment();
             }
         }
-
-        parse_chars("\n");
     }
 
     void parse_table_header() {
@@ -553,8 +580,8 @@ private:
 
                 std::string string;
                 while (true) {
-                    if (input.peek() == '\'') {
-                        input.get();
+                    char ch = input.get();
+                    if (ch == '\'') {
                         if (input.peek() == '\'') {
                             input.get();
                             if (input.peek() == '\'') {
@@ -565,8 +592,10 @@ private:
                             string.push_back('\'');
                         }
                         string.push_back('\'');
+                    } else if (ch < 32 && ch != '\t' && ch != '\n') {
+                        throw parser_error_t("Control characters are not allowed", last_char_offset());
                     } else {
-                        string.push_back(input.get());
+                        string.push_back(ch);
                     }
                 }
             } else {
@@ -577,7 +606,9 @@ private:
 
             while (true) {
                 char ch = input.get();
-                if (ch == '\n') {
+                if (ch < 32 && ch != '\t') {
+                    throw parser_error_t("Control characters are not allowed", last_char_offset());
+                } else if (ch == '\n') {
                     throw parser_error_t("Literal strings must be one-line", last_char_offset());
                 } else if (ch == '\'') {
                     break;
@@ -768,6 +799,9 @@ private:
                 digits[next_index++] = input.get();
             }
 
+            char first_digit = input.peek();
+            std::size_t exponent_start = input.processed();
+            std::size_t exponent_size = 0;
             last_digit = false;
             while (true) {
                 if (next_index == max_double_length) {
@@ -777,6 +811,7 @@ private:
                 if (std::isdigit(input.peek())) {
                     digits[next_index++] = input.get();
                     last_digit = true;
+                    ++exponent_size;
                 } else if (last_digit && input.peek() == '_') {
                     input.get();
                     last_digit = false;
@@ -787,6 +822,10 @@ private:
 
             if (!last_digit) {
                 throw parser_error_t("Unexpected number end", last_char_offset());
+            }
+
+            if (exponent_size > 1 && first_digit == '0') {
+                throw parser_error_t("Leading zeros are not allowed in exponent", exponent_start);
             }
         }
 
