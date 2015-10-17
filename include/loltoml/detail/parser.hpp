@@ -214,7 +214,7 @@ private:
         }
 
         if (array_item) {
-            handler.table_array_item(path.cbegin(), path.cend());
+            handler.array_table(path.cbegin(), path.cend());
         } else {
             handler.table(path.cbegin(), path.cend());
         }
