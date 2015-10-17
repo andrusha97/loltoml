@@ -11,6 +11,7 @@ LOLTOML_OPEN_NAMESPACE
 
 namespace detail {
 
+
 class input_stream_t {
 public:
     explicit input_stream_t(std::istream &input) :
@@ -24,8 +25,12 @@ public:
 
         if (ch != std::char_traits<char>::eof()) {
             return ch;
-        } else if (m_backend.eof() && m_emit_eol) {
-            return '\n';
+        } else if (m_backend.eof()) {
+            if (m_emit_eol) {
+                return '\n';
+            } else {
+                throw parser_error_t("Unexpected EOF", processed());
+            }
         } else {
             throw stream_error_t(processed());
         }
@@ -37,9 +42,13 @@ public:
         if (m_backend.get(result)) {
             ++m_processed;
             return result;
-        } else if (m_backend.eof() && m_emit_eol) {
-            m_emit_eol = false;
-            return '\n';
+        } else if (m_backend.eof()) {
+            if (m_emit_eol) {
+                m_emit_eol = false;
+                return '\n';
+            } else {
+                throw parser_error_t("Unexpected EOF", processed());
+            }
         } else {
             throw stream_error_t(processed());
         }
@@ -58,6 +67,7 @@ private:
     std::size_t m_processed;
     bool m_emit_eol;
 };
+
 
 } // namespace detail
 

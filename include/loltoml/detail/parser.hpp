@@ -16,6 +16,7 @@ LOLTOML_OPEN_NAMESPACE
 
 namespace detail {
 
+
 std::string escape_char(char ch) {
     if (ch == '\\') {
         return "\\\\";
@@ -60,7 +61,6 @@ public:
     { }
 
     void parse() {
-        skip_spaces();
         skip_spaces_and_empty_lines();
 
         handler.start_document();
@@ -73,7 +73,6 @@ public:
             }
             skip_spaces();
             parse_line_end();
-            skip_spaces();
             skip_spaces_and_empty_lines();
         }
 
@@ -91,9 +90,15 @@ private:
         table
     };
 
+    std::size_t last_char_offset() const {
+        std::size_t processed = input.processed();
+        return (processed == 0) ? 0 : (processed - 1);
+    }
+
     template<std::size_t N>
     char parse_chars(const char (&expected)[N]) {
         static_assert(N > 0, "No expected characters specified");
+        assert(expected[N - 1] == '\0');
 
         char result = input.get();
         for (std::size_t i = 0; i + 1 < N; ++i) {
@@ -105,10 +110,10 @@ private:
         std::string list = "\'" + escape_char(expected[0]) + "\'";
 
         for (std::size_t i = 1; i + 1 < N; ++i) {
-            list += ", \'" + escape_char(expected[0]) + "\'";
+            list += ", \'" + escape_char(expected[i]) + "\'";
         }
 
-        throw parser_error_t("Expected one of the following symbols: " + list, input.processed());
+        throw parser_error_t("Expected one of the following symbols: " + list, last_char_offset());
     }
 
     void skip_spaces() {
@@ -216,7 +221,7 @@ private:
         }
 
         if (key.empty()) {
-            throw parser_error_t("Key must be non-empty", input.processed());
+            throw parser_error_t("Expected a non-empty key", last_char_offset());
         }
 
         return key;
@@ -270,10 +275,11 @@ private:
                 return;
             }
 
+            std::size_t item_offset = input.processed();
             toml_type_t current_item_type = parse_value();
 
             if (size > 0 && current_item_type != array_type) {
-                throw parser_error_t("All array elements must be of the same type", input.processed());
+                throw parser_error_t("All array elements must be of the same type", item_offset);
             }
 
             ++size;
@@ -288,7 +294,7 @@ private:
             } else if (ch == ',') {
                 skip_spaces_and_empty_lines();
             } else {
-                throw parser_error_t("',' or ']' expected after array element", input.processed());
+                throw parser_error_t("Expected ',' or ']' after an array element", last_char_offset());
             }
         }
     }
@@ -324,7 +330,7 @@ private:
             } else if (ch == ',') {
                 skip_spaces();
             } else {
-                throw parser_error_t("',' or '}' expected after inline table element", input.processed());
+                throw parser_error_t("Expected ',' or '}' after an inline table element", last_char_offset());
             }
         }
     }
@@ -358,7 +364,7 @@ private:
         } else if (ch >= 'a' && ch <= 'z') {
             return ch - 'a' + 10;
         } else {
-            throw parser_error_t("Expected hex-digit", input.processed());
+            throw parser_error_t("Expected hex-digit", last_char_offset());
         }
     }
 
@@ -384,15 +390,16 @@ private:
         return codepoint;
     }
 
-    void process_codepoint(uint32_t codepoint, std::string &output) {
+    void process_codepoint(uint32_t codepoint, std::size_t escape_sequence_offset, std::string &output) {
         if (codepoint >= 0xD800 && codepoint <= 0xDFFF) {
-            throw parser_error_t("Surrogate pairs are not allowed", input.processed());
+            throw parser_error_t("Surrogate pairs are not allowed", escape_sequence_offset);
         }
 
         if (codepoint > 0x10FFFF) {
-            throw parser_error_t("Codepoint must be less or equal than 0x10FFFF", input.processed());
+            throw parser_error_t("Codepoint must be less or equal than 0x10FFFF", escape_sequence_offset);
         }
 
+        // FIXME: Is it correct to cast unsigned to chars like this?
         if (codepoint <= 0x7F) {
             output.push_back(codepoint);
         } else if (codepoint <= 0x7FF) {
@@ -414,17 +421,15 @@ private:
         std::string result;
 
         while (true) {
-            if (static_cast<unsigned char>(input.peek()) < 32) {
-                throw parser_error_t("Control characters must be escaped", input.processed());
-            } else if (input.peek() == '"') {
-                input.get();
+            char ch = input.get();
+            if (static_cast<unsigned char>(ch) < 32) {
+                throw parser_error_t("Control characters must be escaped", last_char_offset());
+            } else if (ch == '"') {
                 break;
-            } else if (input.peek() == '\n') {
-                input.get();
-                throw parser_error_t("Basic strings must be one-line", input.processed());
-            } else if (input.peek() == '\\') {
-                input.get();
-
+            } else if (ch == '\n') {
+                throw parser_error_t("Basic strings must be one-line", last_char_offset());
+            } else if (ch == '\\') {
+                std::size_t escape_sequence_offset = last_char_offset();
                 char ch = input.get();
                 if (ch == 'b') {
                     result.push_back('\b');
@@ -441,14 +446,14 @@ private:
                 } else if (ch == '\\') {
                     result.push_back('\\');
                 } else if (ch == 'u') {
-                    process_codepoint(parse_4_digit_codepoint(), result);
+                    process_codepoint(parse_4_digit_codepoint(), escape_sequence_offset, result);
                 } else if (ch == 'U') {
-                    process_codepoint(parse_8_digit_codepoint(), result);
+                    process_codepoint(parse_8_digit_codepoint(), escape_sequence_offset, result);
                 } else {
-                    throw parser_error_t("Invalid escape-sequence", input.processed());
+                    throw parser_error_t("Invalid escape-sequence", escape_sequence_offset);
                 }
             } else {
-                result.push_back(input.get());
+                result.push_back(ch);
             }
         }
 
@@ -464,10 +469,10 @@ private:
         }
 
         while (true) {
-            if (static_cast<unsigned char>(input.peek()) < 32 && input.peek() != '\n' && input.peek() != '\r') {
-                throw parser_error_t("Control characters must be escaped", input.processed());
-            } else if (input.peek() == '"') {
-                input.get();
+            char ch = input.get();
+            if (static_cast<unsigned char>(ch) < 32 && ch != '\n' && ch != '\r') {
+                throw parser_error_t("Control characters must be escaped", last_char_offset());
+            } else if (ch == '"') {
                 if (input.peek() == '"') {
                     input.get();
                     if (input.peek() == '"') {
@@ -477,9 +482,8 @@ private:
                     result.push_back('"');
                 }
                 result.push_back('"');
-            } else if (input.peek() == '\\') {
-                input.get();
-
+            } else if (ch == '\\') {
+                std::size_t escape_sequence_offset = last_char_offset();
                 char ch = input.get();
                 if (ch == '\n') {
                     while (std::isspace(input.peek())) {
@@ -500,14 +504,14 @@ private:
                 } else if (ch == '\\') {
                     result.push_back('\\');
                 } else if (ch == 'u') {
-                    process_codepoint(parse_4_digit_codepoint(), result);
+                    process_codepoint(parse_4_digit_codepoint(), escape_sequence_offset, result);
                 } else if (ch == 'U') {
-                    process_codepoint(parse_8_digit_codepoint(), result);
+                    process_codepoint(parse_8_digit_codepoint(), escape_sequence_offset, result);
                 } else {
-                    throw parser_error_t("Invalid escape-sequence", input.processed());
+                    throw parser_error_t("Invalid escape-sequence", escape_sequence_offset);
                 }
             } else {
-                result.push_back(input.get());
+                result.push_back(ch);
             }
         }
 
@@ -572,14 +576,14 @@ private:
             std::string string;
 
             while (true) {
-                if (input.peek() == '\n') {
-                    throw parser_error_t("Literal strings must be one-line", input.processed());
-                } else if (input.peek() == '\'') {
-                    input.get();
+                char ch = input.get();
+                if (ch == '\n') {
+                    throw parser_error_t("Literal strings must be one-line", last_char_offset());
+                } else if (ch == '\'') {
                     break;
                 }
 
-                string.push_back(input.get());
+                string.push_back(ch);
             }
 
             handler.string(string);
@@ -587,19 +591,22 @@ private:
     }
 
     char parse_datetime_digit() {
-        if (std::isdigit(input.peek())) {
-            return input.get();
+        char ch = input.get();
+        if (std::isdigit(ch)) {
+            return ch;
         } else {
-            throw parser_error_t("Bad datetime. Expected digit.", input.processed());
+            throw parser_error_t("Bad datetime. Expected digit.", last_char_offset());
         }
     }
 
     toml_type_t parse_date_or_number() {
-        constexpr int max_int64_digits = 19;
+        const int max_int64_digits = 19;
         const char *max_int64_string = "9223372036854775807";
         const char *min_int64_string = "9223372036854775808";
 
-        constexpr std::size_t max_double_length = 800;
+        const std::size_t max_double_length = 800;
+
+        std::size_t value_offset = input.processed();
 
         char buffer[max_double_length + 1];
         buffer[0] = '+';
@@ -667,13 +674,13 @@ private:
             input.get();
         } else {
             input.get();
-            throw parser_error_t("Unexpected character", input.processed());
+            throw parser_error_t("Unexpected character", last_char_offset());
         }
 
         bool last_digit = next_index > 0;
         while (true) {
             if (next_index == max_double_length) {
-                throw parser_error_t("Number is too long", input.processed());
+                throw parser_error_t("Number is too long", last_char_offset());
             }
 
             if (std::isdigit(input.peek())) {
@@ -688,11 +695,11 @@ private:
         }
 
         if (!last_digit) {
-            throw parser_error_t("Unexpected number end", input.processed());
+            throw parser_error_t("Unexpected number end", last_char_offset());
         }
 
         if (digits[0] == '0' && next_index > 1) {
-            throw parser_error_t("Leading zeros are not allowed", input.processed() + 1 - next_index);
+            throw parser_error_t("Leading zeros are not allowed", input.processed() - next_index);
         }
 
         if (input.peek() != '.' && input.peek() != 'e' && input.peek() != 'E') {
@@ -700,16 +707,16 @@ private:
             {
                 if (buffer[0] == '-' && strncmp(digits, min_int64_string, max_int64_digits) > 0) {
                     throw parser_error_t("The number cannot be represented as 64-bit signed integer",
-                                         input.processed() - next_index);
+                                         value_offset);
                 }
 
                 if (buffer[0] != '-' && strncmp(digits, max_int64_string, max_int64_digits) > 0) {
                     throw parser_error_t("The number cannot be represented as 64-bit signed integer",
-                                         input.processed() - next_index);
+                                         value_offset);
                 }
             } else if (next_index > max_int64_digits) {
                 throw parser_error_t("The number cannot be represented as 64-bit signed integer",
-                                     input.processed() - next_index);
+                                     value_offset);
             }
 
             std::int64_t result = 0;
@@ -735,7 +742,7 @@ private:
             last_digit = false;
             while (true) {
                 if (next_index == max_double_length) {
-                    throw parser_error_t("Number is too long", input.processed());
+                    throw parser_error_t("Number is too long", last_char_offset());
                 }
 
                 if (std::isdigit(input.peek())) {
@@ -750,7 +757,7 @@ private:
             }
 
             if (!last_digit) {
-                throw parser_error_t("Unexpected number end", input.processed());
+                throw parser_error_t("Unexpected number end", last_char_offset());
             }
         }
 
@@ -764,7 +771,7 @@ private:
             last_digit = false;
             while (true) {
                 if (next_index == max_double_length) {
-                    throw parser_error_t("Number is too long", input.processed());
+                    throw parser_error_t("Number is too long", last_char_offset());
                 }
 
                 if (std::isdigit(input.peek())) {
@@ -779,7 +786,7 @@ private:
             }
 
             if (!last_digit) {
-                throw parser_error_t("Unexpected number end", input.processed());
+                throw parser_error_t("Unexpected number end", last_char_offset());
             }
         }
 
@@ -788,18 +795,19 @@ private:
         double result = std::strtod(buffer, &end);
 
         if (end != digits + next_index) {
-            throw parser_error_t("Bad number", input.processed() - next_index);
+            throw parser_error_t("Bad number", value_offset);
         }
 
         if (std::isnan(result) || std::isinf(result)) {
             throw parser_error_t("The number can not be represented as 64-bit floating point number",
-                                 input.processed() - next_index);
+                                 value_offset);
         }
 
         handler.floating_point(result);
         return toml_type_t::floating_point;
     }
 };
+
 
 } // namespace detail
 

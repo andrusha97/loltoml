@@ -6,8 +6,8 @@
 #include <exception>
 #include <string>
 
-
 LOLTOML_OPEN_NAMESPACE
+
 
 class parser_error_t :
     public std::exception
@@ -48,7 +48,7 @@ public:
     }
 };
 
-LOLTOML_CLOSE_NAMESPACE
 
+LOLTOML_CLOSE_NAMESPACE
 
 #endif // LOLTOML_ERROR_HPP

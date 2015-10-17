@@ -4,10 +4,11 @@
 #include "loltoml/detail/common.hpp"
 #include "loltoml/detail/parser.hpp"
 
-
 LOLTOML_OPEN_NAMESPACE
 
+
 typedef detail::key_iterator_t key_iterator_t;
+
 
 template<class Handler>
 void parse(std::istream &input, Handler &handler) {
@@ -15,7 +16,7 @@ void parse(std::istream &input, Handler &handler) {
     parser.parse();
 }
 
-LOLTOML_CLOSE_NAMESPACE
 
+LOLTOML_CLOSE_NAMESPACE
 
 #endif // LOLTOML_PARSE_HPP
