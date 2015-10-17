@@ -129,6 +129,8 @@ private:
         while (input.peek() == '\t' || !iscontrol(input.peek())) {
             comment.push_back(input.get());
         }
+
+        handler.comment(comment);
     }
 
     void parse_new_line() {

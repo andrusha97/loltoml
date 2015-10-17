@@ -230,6 +230,10 @@ struct events_aggregator_t {
         events.emplace_back(sax_event_t::finish_document);
     }
 
+    void comment(const std::string &) {
+        // Ignore for now.
+    }
+
     void array_table(loltoml::key_iterator_t begin, loltoml::key_iterator_t end) {
         events.emplace_back(sax_event_t::table_array_item, begin, end);
     }
