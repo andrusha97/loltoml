@@ -25,7 +25,7 @@ public:
 
         if (ch != std::char_traits<char>::eof()) {
             return ch;
-        } else if (m_backend.fail()) {
+        } else if (m_backend.bad()) {
             throw stream_error_t(processed());
         } else {
             if (m_emit_eol) {
@@ -42,7 +42,7 @@ public:
         if (m_backend.get(result)) {
             ++m_processed;
             return result;
-        } else if (m_backend.fail()) {
+        } else if (m_backend.bad()) {
             throw stream_error_t(processed());
         } else {
             if (m_emit_eol) {

@@ -9,7 +9,7 @@ LOLTOML_OPEN_NAMESPACE
 
 /*! Type of iterators passed by loltoml::parse() to methods table() and array_table() of the handler.
  *
- * It satisfies the InputIterator concept.
+ * It "points" to a std::string. Satisfies the InputIterator concept.
  */
 typedef detail::key_iterator_t key_iterator_t;
 
@@ -51,7 +51,7 @@ typedef detail::key_iterator_t key_iterator_t;
  * \param[in, out] input Stream containing a TOML document. It must be utf-8 encoded.
  * \param[out] handler Parser will feed SAX-events to this object.
  * \throws loltoml::parser_error_t if the input contains an invalid TOML document or just cannot be read.
- * \throws loltoml::stream_error_t if input.fail() becomes true.
+ * \throws loltoml::stream_error_t if input.bad() becomes true.
  */
 template<class Handler>
 void parse(std::istream &input, Handler &handler) {
