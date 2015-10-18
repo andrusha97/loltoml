@@ -1,4 +1,4 @@
-LolToml
+LolToml [![Build Status](https://travis-ci.org/andrusha97/loltoml.svg?branch=master)](https://travis-ci.org/andrusha97/loltoml)
 =======
 
 It's header-only, depends only on the C++ standard library.
