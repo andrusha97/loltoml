@@ -69,18 +69,14 @@ struct handler_t {
             return;
         }
 
-        if (sequences_stack.top().type == sequence_type_t::array) {
-            if (sequences_stack.top().processed_items > 0) {
-                std::cout << ", ";
-            }
-            ++sequences_stack.top().processed_items;
-        }
+        ++sequences_stack.top().processed_items;
     }
 
     void print_value_suffix() {
         if (sequences_stack.empty()) {
             std::cout << std::endl;
-            return;
+        } else if (sequences_stack.top().type == sequence_type_t::array) {
+            std::cout << ", ";
         }
     }
 
@@ -93,7 +89,6 @@ struct handler_t {
             if (sequences_stack.top().processed_items > 0) {
                 std::cout << ", ";
             }
-            ++sequences_stack.top().processed_items;
         }
     }
 
