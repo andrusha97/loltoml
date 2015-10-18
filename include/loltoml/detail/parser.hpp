@@ -324,6 +324,7 @@ private:
             ++size;
             array_type = current_item_type;
 
+            // FIXME: Formal grammar from https://github.com/toml-lang/toml/pull/236 disallows new-lines between values and commas.
             skip_spaces_and_empty_lines();
 
             char ch = input.get();
