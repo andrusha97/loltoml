@@ -51,6 +51,15 @@ inline bool iscontrol(char ch) {
 }
 
 
+inline bool is_key_character(char ch) {
+    return (ch >= 'a' && ch <= 'z') ||
+           (ch >= 'A' && ch <= 'Z') ||
+           (ch >= '0' && ch <= '9') ||
+           ch == '-' ||
+           ch == '_';
+}
+
+
 typedef std::vector<std::string>::const_iterator key_iterator_t;
 
 
@@ -236,22 +245,22 @@ private:
         if (input.peek() == '"') {
             input.get();
             key = parse_basic_string();
-        } else {
-            while (true) {
-                if ((input.peek() >= 'a' && input.peek() <= 'z') ||
-                    (input.peek() >= 'A' && input.peek() <= 'Z') ||
-                    (input.peek() >= '0' && input.peek() <= '9') ||
-                    input.peek() == '-' || input.peek() == '_')
-                {
-                    key.push_back(input.get());
-                } else {
-                    break;
-                }
-            }
-        }
 
-        if (key.empty()) {
-            throw parser_error_t("Expected a non-empty key", last_char_offset());
+            if (key.empty()) {
+                throw parser_error_t("Expected a non-empty key", last_char_offset());
+            }
+        } else {
+            // It must be at least one char.
+            char ch = input.get();
+            if (!is_key_character(ch)) {
+                throw parser_error_t("Expected a non-empty key", last_char_offset());
+            }
+
+            key.push_back(ch);
+
+            while (is_key_character(input.peek())) {
+                key.push_back(input.get());
+            }
         }
 
         return key;
