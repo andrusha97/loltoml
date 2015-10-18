@@ -18,6 +18,7 @@ LINK_DIRECTORIES(
 
 ADD_DEFINITIONS(-DTESTS_ROOT="${CMAKE_SOURCE_DIR}/tests/")
 ADD_EXECUTABLE(loltoml-unittests
+    array.cpp
     array_table.cpp
     basic_string.cpp
     boolean.cpp
@@ -26,6 +27,7 @@ ADD_EXECUTABLE(loltoml-unittests
     datetime.cpp
     empty.cpp
     float.cpp
+    inline_table.cpp
     integer.cpp
     key.cpp
     literal_string.cpp
