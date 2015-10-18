@@ -9,6 +9,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -656,7 +657,7 @@ private:
     }
 
     toml_type_t parse_date_or_number() {
-        const int max_int64_digits = 19;
+        const std::size_t max_int64_digits = 19;
         const char *max_int64_string = "9223372036854775807";
         const char *min_int64_string = "9223372036854775808";
 

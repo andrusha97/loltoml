@@ -24,6 +24,8 @@ public:
         m_offset(offset)
     { }
 
+    virtual ~parser_error_t() throw() { }
+
     virtual const char *what() const throw() {
         return "loltoml parser error";
     }
@@ -55,6 +57,8 @@ public:
     stream_error_t(std::size_t processed) :
         parser_error_t("Unable to read data from the stream", processed)
     { }
+
+    virtual ~stream_error_t() throw() { }
 
     virtual const char *what() const throw() {
         return "loltoml stream error";
