@@ -5,10 +5,14 @@ language:
 compiler:
 - clang
 - gcc
-before_install:
-- sudo apt-get update -qq
-install:
-- sudo apt-get install -qq devscripts build-essential equivs python-software-properties
+sudo: false
+addons:
+    apt:
+        packages:
+        - devscripts
+        - build-essential
+        - equivs
+        - python-software-properties
 script:
 - mkdir build
 - cd build
