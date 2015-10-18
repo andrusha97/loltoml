@@ -54,7 +54,7 @@ typedef detail::key_iterator_t key_iterator_t;
  * \throws loltoml::stream_error_t if input.bad() becomes true.
  */
 template<class Handler>
-void parse(std::istream &input, Handler &handler) {
+inline void parse(std::istream &input, Handler &handler) {
     detail::parser_t<Handler> parser(input, handler);
     parser.parse();
 }

@@ -18,6 +18,7 @@ LINK_DIRECTORIES(
 
 ADD_DEFINITIONS(-DTESTS_ROOT="${CMAKE_SOURCE_DIR}/tests/")
 ADD_EXECUTABLE(loltoml-unittests
+    complex.cpp
     valid.cpp
 )
 

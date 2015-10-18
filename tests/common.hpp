@@ -16,6 +16,7 @@ struct sax_event_t {
         invalid_type,
         start_document,
         finish_document,
+        comment,
         table,
         table_array_item,
         key,
@@ -80,7 +81,7 @@ struct sax_event_t {
     { }
 };
 
-bool operator==(const sax_event_t &left, const sax_event_t &right) {
+inline bool operator==(const sax_event_t &left, const sax_event_t &right) {
     if (left.type != right.type) {
         return false;
     }
@@ -89,6 +90,7 @@ bool operator==(const sax_event_t &left, const sax_event_t &right) {
     case sax_event_t::table:
     case sax_event_t::table_array_item:
         return left.keys == right.keys;
+    case sax_event_t::comment:
     case sax_event_t::key:
     case sax_event_t::string:
     case sax_event_t::datetime:
@@ -106,7 +108,7 @@ bool operator==(const sax_event_t &left, const sax_event_t &right) {
     }
 }
 
-std::string escape_string(const std::string &s) {
+inline std::string escape_string(const std::string &s) {
     const char *hex_digits = "0123456789abcdef";
     std::string result;
 
@@ -140,7 +142,7 @@ std::string escape_string(const std::string &s) {
     return result;
 }
 
-std::ostream &operator<<(std::ostream &output, const sax_event_t &event) {
+inline std::ostream &operator<<(std::ostream &output, const sax_event_t &event) {
     switch(event.type) {
     case sax_event_t::invalid_type: {
         output << "{" << "invalid" << "}";
@@ -150,6 +152,9 @@ std::ostream &operator<<(std::ostream &output, const sax_event_t &event) {
     } break;
     case sax_event_t::finish_document: {
         output << "{" << "finish_document" << "}";
+    } break;
+    case sax_event_t::comment: {
+        output << "{" << "comment" << ", '" << escape_string(event.string_data) << "'}";
     } break;
     case sax_event_t::table: {
         output << "{" << "table" << ", {";
@@ -230,8 +235,8 @@ struct events_aggregator_t {
         events.emplace_back(sax_event_t::finish_document);
     }
 
-    void comment(const std::string &) {
-        // Ignore for now.
+    void comment(const std::string &value) {
+        events.emplace_back(sax_event_t::comment, value);
     }
 
     void array_table(loltoml::key_iterator_t begin, loltoml::key_iterator_t end) {
@@ -281,4 +286,10 @@ struct events_aggregator_t {
     void floating_point(double value) {
         events.emplace_back(sax_event_t::floating_point, value);
     }
+};
+
+struct comments_skipper_t :
+    public events_aggregator_t
+{
+    void comment(const std::string &) { }
 };

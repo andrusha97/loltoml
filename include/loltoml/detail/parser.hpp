@@ -17,7 +17,7 @@ LOLTOML_OPEN_NAMESPACE
 namespace detail {
 
 
-std::string escape_char(char ch) {
+inline std::string escape_char(char ch) {
     if (ch == '\\') {
         return "\\\\";
     } else if (ch == '\'') {
@@ -46,7 +46,7 @@ std::string escape_char(char ch) {
 }
 
 
-bool iscontrol(char ch) {
+inline bool iscontrol(char ch) {
     return static_cast<unsigned char>(ch) < 32;
 }
 
