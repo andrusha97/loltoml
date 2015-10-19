@@ -91,19 +91,25 @@ struct handler_t {
             if (next.is_object()) {
                 current = &next;
                 stack.push(current);
-            } else if (next.is_array()) {
+            } else if (next.is_array() && !next.as_array().empty() && next.as_array().back().is_object()) {
                 current = &next.as_array().back();
                 stack.push(&next);
                 stack.push(current);
             } else {
-                assert(false);
+                throw std::exception();
             }
         }
 
-        auto it = current->as_object().insert({path.back(), kora::dynamic_t::array_t()}).first;
-
-        if (!it->second.is_array()) {
-            throw std::exception();
+        auto it = current->as_object().find(path.back());
+        if (it != current->as_object().end()) {
+            if (!it->second.is_array() ||
+                it->second.as_array().empty() ||
+                !it->second.as_array().back().is_object())
+            {
+                throw std::exception();
+            }
+        } else {
+            it = current->as_object().insert({path.back(), kora::dynamic_t::array_t()}).first;
         }
 
         it->second.as_array().push_back(kora::dynamic_t::object_t());
@@ -132,12 +138,12 @@ struct handler_t {
             if (next.is_object()) {
                 current = &next;
                 stack.push(current);
-            } else if (next.is_array()) {
+            } else if (next.is_array() && !next.as_array().empty() && next.as_array().back().is_object()) {
                 current = &next.as_array().back();
                 stack.push(&next);
                 stack.push(current);
             } else {
-                assert(false);
+                throw std::exception();
             }
         }
     }

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <set>
 #include <stack>
+#include <stdexcept>
 #include <vector>
 
 /*
@@ -16,9 +17,13 @@
 
 
 struct handler_t {
+    // Since table [a] may appear after [a.b], we should track assigned/unassigned keys separately.
     std::set<std::vector<std::string>> assigned_keys;
+    // Path to the current value (only keys from tables). It's used to add paths to assigned_keys.
     std::vector<std::string> path;
+    // All the parent objects of the current value including arrays.
     std::stack<kora::dynamic_t*> stack;
+    // Here will be the final DOM.
     kora::dynamic_t result;
 
     void initialize_value(const kora::dynamic_t &value) {
@@ -70,19 +75,25 @@ struct handler_t {
             if (next.is_object()) {
                 current = &next;
                 stack.push(current);
-            } else if (next.is_array()) {
+            } else if (next.is_array() && !next.as_array().empty() && next.as_array().back().is_object()) {
                 current = &next.as_array().back();
                 stack.push(&next);
                 stack.push(current);
             } else {
-                assert(false);
+                throw std::runtime_error("Duplicate key");
             }
         }
 
-        auto it = current->as_object().insert({path.back(), kora::dynamic_t::array_t()}).first;
-
-        if (!it->second.is_array()) {
-            throw std::runtime_error("Duplicate key");
+        auto it = current->as_object().find(path.back());
+        if (it != current->as_object().end()) {
+            if (!it->second.is_array() ||
+                it->second.as_array().empty() ||
+                !it->second.as_array().back().is_object())
+            {
+                throw std::runtime_error("Duplicate key");
+            }
+        } else {
+            it = current->as_object().insert({path.back(), kora::dynamic_t::array_t()}).first;
         }
 
         it->second.as_array().push_back(kora::dynamic_t::object_t());
@@ -111,12 +122,12 @@ struct handler_t {
             if (next.is_object()) {
                 current = &next;
                 stack.push(current);
-            } else if (next.is_array()) {
+            } else if (next.is_array() && !next.as_array().empty() && next.as_array().back().is_object()) {
                 current = &next.as_array().back();
                 stack.push(&next);
                 stack.push(current);
             } else {
-                assert(false);
+                throw std::runtime_error("Duplicate key");
             }
         }
     }
@@ -124,6 +135,9 @@ struct handler_t {
     void key(const std::string &key) {
         path.push_back(key);
 
+        // If path.size() != stack.size() then one of the parent objects is an array.
+        // Since every element of any array is processed only once,
+        // there is no need to track uniqueness of paths comming through arrays.
         if (path.size() == stack.size()) {
             if (!assigned_keys.insert(path).second) {
                 throw std::runtime_error("Duplicate key");

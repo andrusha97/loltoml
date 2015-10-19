@@ -1,8 +1,11 @@
 #include <loltoml/parse.hpp>
 
-#include <fstream>
 #include <iostream>
 
+
+/*
+ * Minimal example of how to use the SAX parser.
+ */
 
 struct handler_t {
     void start_document() {

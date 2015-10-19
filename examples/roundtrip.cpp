@@ -1,12 +1,10 @@
 #include <loltoml/parse.hpp>
 
-#include <fstream>
 #include <iostream>
 #include <stack>
 
 /*
- * Here we will track some state in the handler to print back the TOML document while parsing it.
- * Though it will be pretty poor formated.
+ * Here we track some state in the handler to print back the TOML document while parsing it.
  */
 
 
