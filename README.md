@@ -9,7 +9,7 @@ So any breaking changes in the language spec will be reflected in the library. B
 Currently supported version is [v0.4.0](https://github.com/toml-lang/toml/tree/v0.4.0).
 
 It passes all tests from the [toml test suite](https://github.com/BurntSushi/toml-test)
-using the [decoder](https://github.com/andrusha97/loltoml/blob/master/examples/toml-test-decoder.cpp) from examples.
+using a [decoder](https://github.com/andrusha97/loltoml/blob/master/examples/toml-test-decoder.cpp) from the examples.
 
 Build and dependencies
 =====================
