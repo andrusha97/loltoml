@@ -37,7 +37,7 @@ std::string escape_string(const std::string &s) {
             result.push_back(hex_digits[static_cast<unsigned char>(ch) / 16]);
             result.push_back(hex_digits[static_cast<unsigned char>(ch) % 16]);
         } else {
-            result += std::string(1, ch);
+            result.push_back(ch);
         }
     }
 

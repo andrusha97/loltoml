@@ -440,21 +440,21 @@ private:
             throw parser_error_t("Codepoint must be less or equal than 0x10FFFF", escape_sequence_offset);
         }
 
-        // FIXME: Is it correct to cast unsigned to chars like this?
+        // FIXME: Can these casts to unsigned char be omitted?
         if (codepoint <= 0x7F) {
-            output.push_back(codepoint);
-        } else if (codepoint <= 0x7FF) {
-            output.push_back(0xC0 | (codepoint >> 6));
-            output.push_back(0x80 | (codepoint & 0x3F));
+            output.push_back(static_cast<unsigned char>(codepoint));
+        } else if (static_cast<unsigned char>(codepoint <= 0x7FF)) {
+            output.push_back(static_cast<unsigned char>(0xC0 | (codepoint >> 6)));
+            output.push_back(static_cast<unsigned char>(0x80 | (codepoint & 0x3F)));
         } else if (codepoint <= 0xFFFF) {
-            output.push_back(0xE0 | (codepoint >> 12));
-            output.push_back(0x80 | ((codepoint >> 6) & 0x3F));
-            output.push_back(0x80 | (codepoint & 0x3F));
+            output.push_back(static_cast<unsigned char>(0xE0 | (codepoint >> 12)));
+            output.push_back(static_cast<unsigned char>(0x80 | ((codepoint >> 6) & 0x3F)));
+            output.push_back(static_cast<unsigned char>(0x80 | (codepoint & 0x3F)));
         } else {
-            output.push_back(0xF0 | (codepoint >> 18));
-            output.push_back(0x80 | ((codepoint >> 12) & 0x3F));
-            output.push_back(0x80 | ((codepoint >> 6) & 0x3F));
-            output.push_back(0x80 | (codepoint & 0x3F));
+            output.push_back(static_cast<unsigned char>(0xF0 | (codepoint >> 18)));
+            output.push_back(static_cast<unsigned char>(0x80 | ((codepoint >> 12) & 0x3F)));
+            output.push_back(static_cast<unsigned char>(0x80 | ((codepoint >> 6) & 0x3F)));
+            output.push_back(static_cast<unsigned char>(0x80 | (codepoint & 0x3F)));
         }
     }
 
