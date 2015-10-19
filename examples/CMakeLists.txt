@@ -13,3 +13,6 @@ ADD_EXECUTABLE(roundtrip roundtrip.cpp)
 
 ADD_EXECUTABLE(toml-test-decoder toml-test-decoder.cpp)
 TARGET_LINK_LIBRARIES(toml-test-decoder kora-util)
+
+ADD_EXECUTABLE(dom dom.cpp)
+TARGET_LINK_LIBRARIES(dom kora-util)
