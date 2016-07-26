@@ -106,7 +106,7 @@ TEST(MultilineString, BadUnicode) {
 }
 
 TEST(MultilineString, BadUnicodeEscape) {
-    test_error("\"test\\u000g\"");
-    test_error("\"test\\u00GG\"");
-    test_error("\"test\\uzzzz\"");
+    test_error("\"\"\"test\\u000g\"\"\"");
+    test_error("\"\"\"test\\u00GG\"\"\"");
+    test_error("\"\"\"test\\uzzzz\"\"\"");
 }
