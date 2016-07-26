@@ -103,6 +103,10 @@ TEST(MultilineString, BadUnicode) {
 
     test_error("\"\"\"test\\U00110000test\"\"\"");
     test_error("\"\"\"test\\Uaa110000test\"\"\"");
+}
 
+TEST(MultilineString, BadUnicodeEscape) {
+    test_error("\"test\\u000g\"");
     test_error("\"test\\u00GG\"");
+    test_error("\"test\\uzzzz\"");
 }
